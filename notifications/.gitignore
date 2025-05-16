@@ -1,0 +1,10 @@
+*.exe
+*.out
+*.test
+*.bin
+bin/
+dist/
+*.mod
+*.sum
+coverage.out
+.env

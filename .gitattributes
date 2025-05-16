@@ -1,0 +1,37 @@
+# Normalize line endings globally
+* text=auto eol=lf
+
+# PHP and Laravel
+*.php diff=php
+*.blade.php diff=html
+*.env export-ignore
+
+# Frontend files
+*.css diff=css
+*.html diff=html
+*.js diff=javascript
+*.ts diff=typescript
+*.vue diff=javascript
+
+# Go files (For microservices)
+*.go diff=go
+*.mod text
+*.sum text
+bin/ export-ignore  # Ignore compiled Go binaries
+
+# Markdown and Documentation
+*.md diff=markdown
+
+# Ignore generated folders globally
+/vendor/ export-ignore
+/node_modules/ export-ignore
+/storage/ export-ignore
+
+# Docker files (Optional, if you don't want them in archives)
+docker-compose.yml export-ignore
+Dockerfile export-ignore
+
+# GitHub specific files (Ignore from archives)
+.github/ export-ignore
+CHANGELOG.md export-ignore
+.styleci.yml export-ignore

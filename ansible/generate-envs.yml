@@ -1,0 +1,20 @@
+- name: Generate .env files for all microservices
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Generate .env for core-api
+      template:
+        src: templates/env.core-api.j2
+        dest: ../core-api/.env
+
+    - name: Generate .env for notifications
+      template:
+        src: templates/env.notifications.j2
+        dest: ../notifications/.env
+
+    - name: Generate general .env
+      template:
+        src: templates/env.j2
+        dest: ../.env

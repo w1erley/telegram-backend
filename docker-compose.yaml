@@ -1,0 +1,160 @@
+version: '3.8'
+
+x-common-env: &common_env
+  REDIS_HOST: redis
+  REDIS_PORT: '${REDIS_PORT:-6379}'
+  DB_HOST: pgsql
+  DB_DATABASE: '${DB_DATABASE}'
+  DB_USERNAME: '${DB_USERNAME}'
+  DB_PASSWORD: '${DB_PASSWORD:-secret}'
+
+services:
+  core-api:
+    build:
+      context: ./core-api
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP}'
+    image: core-api:latest
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '${LARAVEL_APP_PORT:-8080}:8080'
+      - '${LARAVEL_VITE_PORT:-5173}:${LARAVEL_VITE_PORT:-5173}'
+      - '${REVERB_PORT:-6001}:${REVERB_PORT:-6001}'
+    environment:
+      <<: *common_env
+      WWWUSER: '${WWWUSER}'
+      LARAVEL_SAIL: 1
+      XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+      XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+      IGNITION_LOCAL_SITES_PATH: '${PWD}'
+    env_file:
+      - ./core-api/.env
+    volumes:
+      - ./core-api:/var/www/html:delegated
+    networks: [sail]
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      notifications:
+        condition: service_started
+      webrtc:
+        condition: service_started
+      storage:
+        condition: service_started
+      tusd:
+        condition: service_started
+
+  pgsql:
+    image: postgres:15
+    ports:
+      - '${FORWARD_DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_DB:     '${DB_DATABASE}'
+      POSTGRES_USER:   '${DB_USERNAME}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - sail-pgsql:/var/lib/postgresql/data
+      - ./core-api/vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql
+    networks: [sail]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USERNAME}"]
+      retries: 5
+      timeout: 10s
+
+  redis:
+    image: redis:alpine
+    ports: [ '${REDIS_PORT:-6379}:6379' ]
+    volumes: [ sail-redis:/data ]
+    networks: [sail]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      retries: 3
+      timeout: 5s
+
+  notifications:
+    build:
+      context: ./notifications
+      dockerfile: Dockerfile
+    image: notifications_service:latest
+    ports: [ "8082:8082" ]
+    env_file: [ ./notifications/.env ]
+    environment:
+      <<: *common_env
+      JWT_SECRET: '${JWT_SECRET}'
+    networks: [sail]
+    depends_on: { redis: { condition: service_started } }
+
+  webrtc:
+    build:
+      context: ./webrtc
+      dockerfile: Dockerfile
+    image: webrtc_service:latest
+    ports: [ "8083:8083" ]
+    env_file: [ ./webrtc/.env ]
+    environment:
+      <<: *common_env
+    networks: [sail]
+    depends_on:
+      redis: { condition: service_started }
+      pgsql: { condition: service_healthy }
+
+  storage:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER:     ${MINIO_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET}
+    volumes: [ minio-data:/data ]
+    networks: [sail]
+
+  tusd:
+    image: tusproject/tusd:latest
+    command: >
+      -s3-bucket chat-files
+      -s3-endpoint http://storage:9000
+      -s3-disable-ssl
+      -hooks-http http://core-api:8080/api/tus/hooks
+      -behind-proxy
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_KEY}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET}
+      AWS_REGION: us-east-1
+    ports: [ "1080:8080" ]
+    volumes: [ tusd-data:/tusd ]
+    networks: [ sail ]
+    depends_on:
+      storage:
+        condition: service_started
+
+  nginx:
+    image: nginx:latest
+    ports: [ "80:80", "443:443" ]
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/ssl
+    environment:
+      DOMAIN: '${DOMAIN}'
+    depends_on:
+      - core-api
+      - notifications
+      - webrtc
+      - storage
+      - tusd
+    networks: [sail]
+
+networks:
+  sail:
+    driver: bridge
+
+volumes:
+  sail-pgsql:
+  sail-redis:
+  minio-data:
+  tusd-data:

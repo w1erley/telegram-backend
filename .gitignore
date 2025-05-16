@@ -1,0 +1,99 @@
+####################################
+# General Ignore Rules
+####################################
+*.cache
+*.tmp
+*.log
+*.lock
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+####################################
+# Environment Files
+####################################
+*.env
+.env.*
+.env.j2
+**/.env
+**/.env.*
+**/*.env.j2
+
+# Exclude all Jinja2 templates
+*.j2
+**/*.j2
+
+####################################
+# PHP & Laravel (core-api)
+####################################
+/core-api/.phpunit.cache
+/core-api/vendor/
+/core-api/public/build/
+/core-api/public/hot/
+/core-api/public/storage/
+/core-api/storage/*.key
+/core-api/storage/pail/
+/core-api/.phpactor.json
+/core-api/.phpunit.result.cache
+/core-api/Homestead.json
+/core-api/Homestead.yaml
+/core-api/npm-debug.log
+/core-api/yarn-error.log
+/core-api/auth.json
+
+####################################
+# Node.js & Frontend
+####################################
+/node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-error.log*
+
+####################################
+# IDE Settings
+####################################
+.fleet/
+.idea/
+.vscode/
+.nova/
+.zed/
+**/.fleet/
+**/.idea/
+**/.vscode/
+**/.nova/
+**/.zed/
+
+####################################
+# Ansible
+####################################
+ansible/.env
+ansible/.env.*
+!ansible/*.env.j2
+ansible/vars/*.yml
+!ansible/vars/*.example.yml
+ansible/.ansible/
+ansible/__pycache__/
+ansible/*.retry
+
+####################################
+# nginx
+####################################
+nginx/*.log
+nginx/*.conf
+nginx/cache/
+nginx/ssl/
+
+####################################
+# notifications (Go)
+####################################
+notifications/*.exe
+notifications/*.out
+notifications/*.test
+notifications/*.bin
+notifications/bin/
+notifications/dist/
+notifications/*.mod
+notifications/*.sum
+notifications/coverage.out
+notifications/.env
