@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SearchRequest;
 use App\Http\Resources\ChatResource;
 use App\Models\Chat;
 use App\Services\Web\ChatService;
@@ -30,13 +31,41 @@ class ChatController extends Controller
             ? $this->svc->createGroup($data['title'], $data['about'])
             : $this->svc->createChannel($data['title'], $data['about']);
 
-        return response()->json($chat);
+        return new ChatResource($chat);
     }
 
-    public function createPrivate(int $userId)
+    public function update(Chat $chat, UpdateChatRequest $r)
     {
-        return response()->json(
-            $this->svc->createPrivate(auth()->id(), $userId)
+        abort_if(auth()->id() !== $chat->owner_id, 403, 'Only owner can update');
+
+        $updated = $this->svc->update($chat->id, $r->validated());
+        return new ChatResource($updated);
+    }
+
+    public function destroy(Chat $chat)
+    {
+        abort_if(auth()->id() !== $chat->owner_id, 403, 'Only owner can delete');
+
+        $this->svc->delete($chat->id);
+        return response()->json(['ok' => true]);
+    }
+
+//    public function createPrivate(int $userId)
+//    {
+//        return response()->json(
+//            $this->svc->createPrivate(auth()->id(), $userId)
+//        );
+//    }
+
+    public function show(string $key)
+    {
+        $chat = $this->svc->getByKey($key);
+
+        abort_if(
+            !$chat->members()->where('user_id', auth()->id())->exists(),
+            403, 'Forbidden'
         );
+
+        return response()->json(new ChatResource($chat));
     }
 }

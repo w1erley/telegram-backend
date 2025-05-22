@@ -17,23 +17,21 @@ class MessageService extends BaseService
         parent::__construct($repo);
     }
 
-    public function fetchHistory(Chat $chat, int $after) {
+    public function fetchHistory(Chat $chat, ?int $after = null) {
         return $this->repository->fetchHistory($chat->id, $after);
     }
 
     public function send(int $chatId, string $body, ?int $replyId = null): Message
     {
-        $this->assertCanSend($chatId);
-
         $msg = DB::transaction(fn () =>
-        Message::create([
-            'chat_id'       => $chatId,
-            'sender_id'     => auth()->id(),
-            'type'          => 'plain',
-            'body'          => $body,
-            'reply_to_id'   => $replyId,
-            'thread_root_id'=> $replyId ?: null,
-        ])
+            Message::create([
+                'chat_id'       => $chatId,
+                'sender_id'     => auth()->id(),
+                'type'          => 'plain',
+                'body'          => $body,
+                'reply_to_id'   => $replyId,
+                'thread_root_id'=> $replyId ?: null,
+            ])
         );
 
         broadcast(new MessageSent($msg))->toOthers();
@@ -42,7 +40,6 @@ class MessageService extends BaseService
 
     public function edit(Message $msg, string $body): Message
     {
-        $this->assertSenderOrAdmin($msg);
         $msg->update(['body' => $body, 'edited_at' => now()]);
         broadcast(new MessageEdited($msg))->toOthers();
         return $msg;
@@ -50,7 +47,6 @@ class MessageService extends BaseService
 
     public function destroy(Message $msg): void
     {
-        $this->assertSenderOrAdmin($msg);
         $msg->update(['deleted_at' => now()]);
         broadcast(new MessageDeleted($msg->id, $msg->chat_id))->toOthers();
     }

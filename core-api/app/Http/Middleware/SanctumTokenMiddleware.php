@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
 
 use App\Models\Session;
@@ -23,6 +24,7 @@ class SanctumTokenMiddleware
         }
 
         $accessToken = PersonalAccessToken::findToken($token);
+        Log::info("accessToken", ["accessToken" => $accessToken]);
         if (!$accessToken) {
             return response()->json(['message' => 'Token not found'], 401);
         }

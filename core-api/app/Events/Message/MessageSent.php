@@ -2,7 +2,11 @@
 
 namespace App\Events\Message;
 
+
 class MessageSent extends AbstractMessageEvent
 {
-    public $event = 'message.sent';
+    public function broadcastAs(): string
+    {
+        return 'message.sent';
+    }
 }

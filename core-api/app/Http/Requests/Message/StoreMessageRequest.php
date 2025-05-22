@@ -11,7 +11,6 @@ class StoreMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'chat_id'     => 'required|exists:chats,id',
             'body'        => 'required|string|max:4096',
             'reply_to_id' => 'nullable|exists:messages,id',
         ];

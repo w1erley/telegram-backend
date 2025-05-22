@@ -34,9 +34,15 @@ class ChatRepository extends BaseRepository
             fn () => $this->model
                 ->where('type', 'private')
                 ->whereHas('members', fn($q) => $q->whereIn('user_id', [$userA, $userB]))
-                ->withCount(['members as members_count'])
-                ->having('members_count', 2)
                 ->first()
         );
+    }
+
+    public function search(string $query, array $relations = [])
+    {
+        return $this->model
+            ->where('name', 'ILIKE', "%{$query}%")
+            ->with($relations)
+            ->get();
     }
 }

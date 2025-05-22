@@ -9,6 +9,9 @@ use App\Http\Controllers\TusHookController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ThreadController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\SearchController;
+use Illuminate\Support\Facades\Broadcast;
 
 
 use App\Http\Middleware\SanctumTokenMiddleware;
@@ -21,32 +24,43 @@ Route::get('/verify-email/{code}', [AuthController::class, 'verifyEmail']);
 Route::post('tus/hooks', TusHookController::class);
 
 Route::middleware(SanctumTokenMiddleware::class)->group(function () {
+    Broadcast::routes(['middleware' => ['api', SanctumTokenMiddleware::class]]);
+
     Route::prefix('attachments')->group(function () {
         Route::post('init',     [AttachmentController::class,'init']);
         Route::post('complete', [AttachmentController::class,'complete']);
     });
 
     Route::prefix('chats')->group(function () {
-        Route::post('', [ChatController::class,'store']);
-        Route::post('private/{user}', [ChatController::class,'createPrivate']);
-        Route::get('{chat}/messages', [MessageController::class,'index']);
-    });
+        Route::get('', [ChatController::class, 'index']);
+        Route::post('', [ChatController::class, 'store']);
+        Route::get('{key}', [ChatController::class, 'show']);
+//        Route::post('private/{user}', [ChatController::class,'createPrivate']);
 
-    Route::prefix('messages')->group(function () {
-        Route::post('', [MessageController::class,'store']);
-        Route::patch('{message}', [MessageController::class,'update']);
-        Route::delete('{message}',[MessageController::class,'destroy']);
-        Route::post('{message}/react', [MessageController::class,'react']);
+        Route::prefix('{chat}/messages')->group(function () {
+            Route::get('', [MessageController::class, 'index']);
+            Route::post('', [MessageController::class, 'store']);
+            Route::patch('{message}', [MessageController::class, 'update']);
+            Route::delete('{message}',[MessageController::class, 'destroy']);
+            Route::post('{message}/react', [MessageController::class, 'react']);
+        });
     });
 
     Route::prefix('threads')->group(function () {
-        Route::get('{root}/messages',[ThreadController::class,'index']);
-        Route::get('{root}/count',   [ThreadController::class,'count']);
-        Route::post('{root}/messages',[ThreadController::class,'store']);
+        Route::get('{root}/messages',[ThreadController::class, 'index']);
+        Route::get('{root}/count',   [ThreadController::class, 'count']);
+        Route::post('{root}/messages',[ThreadController::class, 'store']);
     });
 
-    Route::get('/user', function (Request $request) {
-        return $request->user();
+    Route::prefix('user')->group(function () {
+        Route::get('/me', function (Request $request) {
+            return $request->user();
+        });
     });
+
+    Route::prefix('search')->group(function () {
+        Route::get('', [SearchController::class, 'index']);
+    });
+
     Route::post('/logout', [AuthController::class, 'logout']);
 });

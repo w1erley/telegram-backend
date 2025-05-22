@@ -19,6 +19,8 @@ class Message extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected $with = ['sender'];
+
     public function chat(): BelongsTo
     {
         return $this->belongsTo(Chat::class);

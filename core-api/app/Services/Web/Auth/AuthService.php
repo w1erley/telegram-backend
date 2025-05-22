@@ -10,6 +10,7 @@ use App\Services\Web\UserService;
 use App\Traits\Loggable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
@@ -27,6 +28,7 @@ class AuthService
         DB::beginTransaction();
 
         try {
+            Log::info("registering", ["credentials" => $credentials]);
             $user = $this->userService->store($credentials);
 
             DB::commit();
@@ -52,13 +54,13 @@ class AuthService
         if (!$user instanceof User) {
             throw new \RuntimeException('Authenticated user is not a valid User model instance.');
         }
-
-        if (!$user->email_verified_at) {
-            $this->verificationService->sendVerificationEmail($user);
-            throw ValidationException::withMessages([
-                'email' => ['Your email is not verified. Please check your inbox.'],
-            ]);
-        }
+//
+//        if (!$user->email_verified_at) {
+//            $this->verificationService->sendVerificationEmail($user);
+//            throw ValidationException::withMessages([
+//                'email' => ['Your email is not verified. Please check your inbox.'],
+//            ]);
+//        }
 
         ['session' => $session, 'token' => $token] = $this->sessionService->createSession($user);
 

@@ -11,7 +11,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'email' => 'nullable|string|email|max:255',
-            'name' => 'nullable|string|max:255',
+            'username' => 'nullable|string|max:255',
             'password' => 'required|string|min:8',
         ];
     }
@@ -20,11 +20,11 @@ class LoginRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $hasEmail = $this->filled('email');
-            $hasName = $this->filled('name');
+            $hasName = $this->filled('username');
 
             if (!$hasEmail && !$hasName) {
                 $validator->errors()->add('email', 'Either email or name is required.');
-                $validator->errors()->add('name', 'Either name or email is required.');
+                $validator->errors()->add('username', 'Either username or email is required.');
             }
         });
     }

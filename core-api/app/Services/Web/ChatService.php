@@ -23,6 +23,36 @@ class ChatService extends BaseService
         );
     }
 
+    public function getByKey(string $key): Chat
+    {
+        if (ctype_digit($key)) {
+            return $this->repository->one((int)$key, ['members.user']);
+        }
+
+        $username = ltrim($key, '@');
+
+        $chat = Chat::whereIn('type', ['group','channel'])
+            ->where('username', $username)
+            ->with('members.user')
+            ->first();
+
+        if ($chat) {
+            return $chat;
+        }
+
+        return $this->findOrCreatePrivateByUsername($username);
+    }
+
+    public function findOrCreatePrivateByUsername(string $username): Chat
+    {
+        $me = auth()->id();
+        $other = User::where('username', $username)->firstOrFail();
+
+        return DB::transaction(function () use ($me, $other) {
+            return $this->createPrivate($me, $other->id);
+        });
+    }
+
     public function createPrivate(int $userA, int $userB): Chat
     {
         if ($chat = $this->repository->findPrivateBetween($userA, $userB)) {
@@ -71,8 +101,6 @@ class ChatService extends BaseService
 
     public function addMember(Chat $chat, int $userId, string $role = 'member'): void
     {
-        $this->checkAdmin($chat);
-
         $chat->members()->updateOrCreate(
             ['user_id' => $userId],
             ['role' => $role, 'joined_at' => now()]
@@ -82,14 +110,12 @@ class ChatService extends BaseService
 
     public function removeMember(Chat $chat, int $userId): void
     {
-        $this->checkAdmin($chat);
         $chat->members()->where('user_id', $userId)->delete();
         // broadcast
     }
 
     public function setRole(Chat $chat, int $userId, string $role): void
     {
-        $this->checkOwner($chat);
         $chat->members()->where('user_id', $userId)->update(['role' => $role]);
     }
 
@@ -102,5 +128,10 @@ class ChatService extends BaseService
     protected function checkOwner(Chat $chat): void
     {
         abort_if($chat->owner_id !== auth()->id(), 403);
+    }
+
+    public function search(string $query, array $relations = [])
+    {
+        return $this->repository->search($query, $relations);
     }
 }
