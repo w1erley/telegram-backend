@@ -20,9 +20,9 @@ class AttachmentController extends Controller
         return response()->json(['attachment' => $att, 'uploadUrl' => $url]);
     }
 
-    public function complete(CompleteRequest $r)
-    {
-        $this->svc->complete($r->uploadKey, ['mime'=>$r->mime]);
-        return ['ok'=>true];
-    }
+//    public function complete(CompleteRequest $r)
+//    {
+//        $this->svc->complete($r->uploadKey, ['mime'=>$r->mime]);
+//        return ['ok'=>true];
+//    }
 }

@@ -46,8 +46,6 @@ class AttachmentService extends BaseService
         $location = $response->header('Location');
         $uploadKey = basename($location);
 
-        Log::info(["data" => $data]);
-
         $attachment = $this->repository->store([
             'upload_key' => $uploadKey,
             'kind' => $kind,

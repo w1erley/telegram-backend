@@ -8,8 +8,8 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\TusHookController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\MessageController;
-use App\Http\Controllers\ThreadController;
-use App\Http\Controllers\UserController;
+//use App\Http\Controllers\ThreadController;
+//use App\Http\Controllers\UserController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SessionController;
 
@@ -31,8 +31,7 @@ Route::middleware(SanctumTokenMiddleware::class)->group(function () {
     Route::post('logout', [SessionController::class, 'destroyCurrent']);
 
     Route::prefix('attachments')->group(function () {
-        Route::post('init',     [AttachmentController::class,'init']);
-        Route::post('complete', [AttachmentController::class,'complete']);
+        Route::post('init', [AttachmentController::class,'init']);
     });
 
     Route::prefix('chats')->group(function () {
@@ -47,16 +46,16 @@ Route::middleware(SanctumTokenMiddleware::class)->group(function () {
             Route::post('', [MessageController::class, 'store']);
             Route::patch('{message}', [MessageController::class, 'update']);
             Route::delete('{message}',[MessageController::class, 'destroy']);
-            Route::post('{message}/react', [MessageController::class, 'react']);
+//            Route::post('{message}/react', [MessageController::class, 'react']);
             Route::post('{message}/read', [MessageController::class, 'markRead']);
         });
     });
 
-    Route::prefix('threads')->group(function () {
-        Route::get('{root}/messages',[ThreadController::class, 'index']);
-        Route::get('{root}/count',   [ThreadController::class, 'count']);
-        Route::post('{root}/messages',[ThreadController::class, 'store']);
-    });
+//    Route::prefix('threads')->group(function () {
+//        Route::get('{root}/messages',[ThreadController::class, 'index']);
+//        Route::get('{root}/count',   [ThreadController::class, 'count']);
+//        Route::post('{root}/messages',[ThreadController::class, 'store']);
+//    });
 
     Route::prefix('user')->group(function () {
         Route::get('/me', function (Request $request) {

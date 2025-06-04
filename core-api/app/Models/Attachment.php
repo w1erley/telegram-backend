@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Attachment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'upload_key', 'kind', 'status',
         'size', 'mime', 'meta',

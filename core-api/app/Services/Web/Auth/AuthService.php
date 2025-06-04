@@ -33,7 +33,7 @@ class AuthService
 
             DB::commit();
 
-            return ['user' => $user];
+            return $user;
         } catch (\Throwable $e) {
             DB::rollBack();
             $this->error($e->getMessage());

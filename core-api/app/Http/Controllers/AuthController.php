@@ -50,14 +50,4 @@ class AuthController extends Controller
             return $this->fail($e->getMessage(), 403);
         }
     }
-
-    public function logout(Request $request)
-    {
-        return $this->authService->logout($request->header('Authorization'));
-    }
-
-    public function logoutAll(Request $request)
-    {
-        return $this->authService->logoutAllSessions(Auth::id());
-    }
 }

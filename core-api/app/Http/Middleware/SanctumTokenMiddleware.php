@@ -40,15 +40,21 @@ class SanctumTokenMiddleware
 
         Auth::setUser($user);
 
+        Log::info("before session");
+
         $session = Session::where('personal_access_token_id', $accessToken->id)->first();
         if (!$session) {
             return response()->json(['message' => 'Invalid session'], 401);
         }
 
+        Log::info("after session");
+
         $session->update(['last_active_at' => Carbon::now()]);
 
         $newExpiration = Carbon::now()->addMinutes(config('sanctum.expiration'));
         $accessToken->forceFill(['expires_at' => $newExpiration])->save();
+
+        Log::info("success");
 
         return $next($request);
     }
