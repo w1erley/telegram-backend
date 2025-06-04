@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Message\StartPrivateChatRequest;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\ChatResource;
 use App\Models\Chat;
 use App\Services\Web\ChatService;
+use App\Services\Web\MessageService;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
-    public function __construct(private ChatService $svc) {}
+    public function __construct(
+        private ChatService $svc,
+        private MessageService $messageService,
+    ) {}
 
     public function index()
     {
@@ -61,10 +66,25 @@ class ChatController extends Controller
     {
         $chat = $this->svc->getByKey($key);
 
-        abort_if(
-            !$chat->members()->where('user_id', auth()->id())->exists(),
-            403, 'Forbidden'
-        );
+        if ($chat instanceof Chat) {
+            abort_if(
+                !$chat->members()->where('user_id', auth()->id())->exists(),
+                403,
+                'Forbidden'
+            );
+
+            return response()->json(new ChatResource($chat));
+        }
+
+        return $chat;
+    }
+
+    public function createPrivateChatAndSend(int $recipient, StartPrivateChatRequest $r)
+    {
+        $validated = $r->validated();
+
+        $chat = $this->svc->createPrivate($recipient, auth()->id());
+        $this->messageService->send($chat->id, $validated['body']);
 
         return response()->json(new ChatResource($chat));
     }

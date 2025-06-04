@@ -21,6 +21,7 @@ class MessageResource extends JsonResource
             'created_at'    => $this->created_at?->toIso8601String(),
             'edited_at'     => $this->edited_at?->toIso8601String(),
             'deleted_at'    => $this->deleted_at?->toIso8601String(),
+            'stats'         => $this->stats
         ];
     }
 }

@@ -44,13 +44,23 @@ class Chat extends Model
     public function getResolvedUsernameAttribute(): ?string
     {
         if ($this->type !== 'private') {
-            return $this->username ? '@'.$this->username : null;
+            return $this->username ? $this->username : null;
         }
 
         $me = auth()->id();
         $other = $this->members()->where('user_id', '!=', $me)->with('user')->first();
-        return $other?->user?->username
-            ? '@'.$other->user->username
-            : null;
+        return $other?->user?->username ?? null;
     }
+
+//    public function getUnreadAttribute(): int
+//    {
+//        $me = auth()->id();
+//
+//        return $this->messages()
+//            ->whereNull('deleted_at')
+//            ->whereDoesntHave('stats', fn ($q) =>
+//            $q->where('user_id', $me)->whereNotNull('read_at')
+//            )
+//            ->count();
+//    }
 }

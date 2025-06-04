@@ -19,7 +19,7 @@ class Message extends Model
         'deleted_at' => 'datetime',
     ];
 
-    protected $with = ['sender'];
+    protected $with = ['sender', 'stats'];
 
     public function chat(): BelongsTo
     {

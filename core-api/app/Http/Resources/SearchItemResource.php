@@ -19,7 +19,7 @@ class SearchItemResource extends JsonResource
             return [
                 'title'        => $this->resolved_title,
                 'description'  => $this->about ?? 'Chat',
-                'redirect_url' => $this->resolved_username ? $this->resolved_username
+                'redirect_url' => $this->resolved_username ? "@$this->resolved_username"
                     : "#{$this->id}",
             ];
         }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Web;
 
+use App\Events\Chat\ChatCreated;
 use App\Http\Resources\ChatResource;
 use App\Services\BaseService;
 use App\Models\{Chat, ChatMember, User};
@@ -11,7 +12,10 @@ use Illuminate\Support\Facades\Log;
 
 class ChatService extends BaseService
 {
-    public function __construct(ChatRepository $repo)
+    public function __construct(
+        ChatRepository $repo,
+        private UserService $userService,
+    )
     {
         parent::__construct($repo);
     }
@@ -23,15 +27,43 @@ class ChatService extends BaseService
         );
     }
 
-    public function getByKey(string $key): Chat
+    public function getByKey(string $key): Chat | array
     {
+        $authUserId = auth()->id();
+
+        if (str_starts_with($key, '-') && ctype_digit(ltrim($key, '-'))) {
+            $chat = $this->one($key, ['members.user']);
+//            $chat = Chat::with('members.user')->find((int)$key);
+
+            if (!$chat || !in_array($chat->type, ['private', 'group', 'channel'])) {
+                abort(404, 'Chat not found');
+            }
+
+            if ($chat->type === 'private' || $chat->members->contains('user_id', $authUserId)) {
+                return $chat;
+            }
+
+            abort(403, 'Forbidden');
+        }
+
         if (ctype_digit($key)) {
-            return $this->repository->one((int)$key, ['members.user']);
+            $user = $this->userService->one($key);
+//            $user = User::find((int)$key);
+            if (!$user) {
+                abort(404, 'User not found');
+            }
+
+            $chat = $this->findPrivateBetween($authUserId, $user->id);
+            if ($chat) {
+                return $chat;
+            }
+
+            return $this->virtualChatWith($user);
         }
 
         $username = ltrim($key, '@');
 
-        $chat = Chat::whereIn('type', ['group','channel'])
+        $chat = Chat::whereIn('type', ['group', 'channel'])
             ->where('username', $username)
             ->with('members.user')
             ->first();
@@ -40,7 +72,40 @@ class ChatService extends BaseService
             return $chat;
         }
 
-        return $this->findOrCreatePrivateByUsername($username);
+        Log::info("username", ["username" => $username]);
+
+        $user = $this->userService->findBy(['username' => $username]);
+        Log::info("user", ["user" => $user]);
+        if (!$user) {
+            abort(404, 'User not found');
+        }
+
+        $chat = $this->findPrivateBetween($authUserId, $user->id);
+        Log::info("chat", ["chat" => $chat]);
+        if ($chat) {
+            return $chat;
+        }
+
+        return $this->virtualChatWith($user);
+    }
+
+    protected function virtualChatWith(User $user): array
+    {
+        return [
+            'id' => null,
+            'is_virtual' => true,
+            'type' => 'private',
+            'title' => $user->name,
+            'resolved_title' => $user->name,
+            'resolved_username' => $user->username,
+            'alias' => "@$user->username",
+            'username' => null,
+            'owner_id' => null,
+            'about' => null,
+            'last_message' => null,
+            'recipient_id' => $user->id,
+            'messages' => [],
+        ];
     }
 
     public function findOrCreatePrivateByUsername(string $username): Chat
@@ -51,6 +116,11 @@ class ChatService extends BaseService
         return DB::transaction(function () use ($me, $other) {
             return $this->createPrivate($me, $other->id);
         });
+    }
+
+    private function findPrivateBetween(int $userA, int $userB): ?Chat
+    {
+        return $this->repository->findPrivateBetween($userA, $userB);
     }
 
     public function createPrivate(int $userA, int $userB): Chat
@@ -71,6 +141,10 @@ class ChatService extends BaseService
             ]);
 
             // broadcast
+            foreach ($chat->members as $member) {
+                event(new ChatCreated($chat, $member->user_id));
+            }
+
             return $chat;
         });
     }

@@ -41,8 +41,8 @@ services:
         condition: service_started
       notifications:
         condition: service_started
-      webrtc:
-        condition: service_started
+#      webrtc:
+#        condition: service_started
       storage:
         condition: service_started
       tusd:
@@ -88,19 +88,19 @@ services:
     networks: [sail]
     depends_on: { redis: { condition: service_started } }
 
-  webrtc:
-    build:
-      context: ./webrtc
-      dockerfile: Dockerfile
-    image: webrtc_service:latest
-    ports: [ "8083:8083" ]
-    env_file: [ ./webrtc/.env ]
-    environment:
-      <<: *common_env
-    networks: [sail]
-    depends_on:
-      redis: { condition: service_started }
-      pgsql: { condition: service_healthy }
+#  webrtc:
+#    build:
+#      context: ./webrtc
+#      dockerfile: Dockerfile
+#    image: webrtc_service:latest
+#    ports: [ "8083:8083" ]
+#    env_file: [ ./webrtc/.env ]
+#    environment:
+#      <<: *common_env
+#    networks: [sail]
+#    depends_on:
+#      redis: { condition: service_started }
+#      pgsql: { condition: service_healthy }
 
   storage:
     image: minio/minio:latest
@@ -144,7 +144,7 @@ services:
     depends_on:
       - core-api
       - notifications
-      - webrtc
+#      - webrtc
       - storage
       - tusd
     networks: [sail]

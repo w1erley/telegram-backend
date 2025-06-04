@@ -2,6 +2,7 @@
 
 PORT=${LARAVEL_APP_PORT:-8080}
 WS_PORT=${REVERB_PORT:-6001}
+VENDOR_PATH="/var/www/html/vendor/autoload.php"
 
 echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
 until timeout 1 bash -c "echo > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; do
@@ -9,6 +10,12 @@ until timeout 1 bash -c "echo > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; do
   sleep 2
 done
 echo "PostgreSQL is up."
+
+# Ensure Composer dependencies are installed after volume mount
+if [ ! -f "$VENDOR_PATH" ]; then
+  echo "Vendor folder missing — running composer install..."
+  composer install --no-dev --prefer-dist --optimize-autoloader
+fi
 
 # If no APP_KEY is set, generate one
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "null" ]; then

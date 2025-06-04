@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Dotenv\Exception\ValidationException;
+use Illuminate\Http\Request;
 use App\Http\Requests\Message\{
     StoreMessageRequest, UpdateMessageRequest, ReactRequest
 };
@@ -12,13 +14,31 @@ class MessageController extends Controller
 {
     public function __construct(private MessageService $svc) {}
 
-    public function index(Chat $chat)
+    public function index(Request $request, Chat $chat)
     {
         abort_if(!$chat->members()->where('user_id', auth()->id())->exists(), 403);
-        $after = request('after');
-        return response()->json(
-            $this->svc->fetchHistory($chat, $after)
+
+        $data = $request->validate([
+            'before' => 'nullable|integer|min:1',
+            'after'  => 'nullable|integer|min:1',
+            'limit'  => 'nullable|integer|min:1|max:100',
+        ]);
+
+        if (!empty($data['before']) && !empty($data['after'])) {
+            throw ValidationException::withMessages([
+                'before' => 'Use either "before" or "after", not both.',
+                'after'  => 'Use either "before" or "after", not both.',
+            ]);
+        }
+
+        $messages = $this->svc->fetchHistory(
+            $chat,
+            before: $data['before'] ?? null,
+            after : $data['after']  ?? null,
+            limit : $data['limit']  ?? 20
         );
+
+        return response()->json($messages);
     }
 
     public function store(Chat $chat, StoreMessageRequest $r)
@@ -84,12 +104,9 @@ class MessageController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function markRead(
-        Chat $chat,
-        Message $message
-    )
+    public function markRead(Chat $chat, Message $message)
     {
-        $this->svc->markRead($message->id);
+        $this->svc->markReadUntil($chat, $message);
         return response()->json(['ok' => true]);
     }
 }

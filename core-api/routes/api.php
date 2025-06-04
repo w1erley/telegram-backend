@@ -11,6 +11,8 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ThreadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SessionController;
+
 use Illuminate\Support\Facades\Broadcast;
 
 
@@ -35,7 +37,8 @@ Route::middleware(SanctumTokenMiddleware::class)->group(function () {
         Route::get('', [ChatController::class, 'index']);
         Route::post('', [ChatController::class, 'store']);
         Route::get('{key}', [ChatController::class, 'show']);
-//        Route::post('private/{user}', [ChatController::class,'createPrivate']);
+
+        Route::post('private/{recipient}', [ChatController::class,'createPrivateChatAndSend']);
 
         Route::prefix('{chat}/messages')->group(function () {
             Route::get('', [MessageController::class, 'index']);
@@ -43,6 +46,7 @@ Route::middleware(SanctumTokenMiddleware::class)->group(function () {
             Route::patch('{message}', [MessageController::class, 'update']);
             Route::delete('{message}',[MessageController::class, 'destroy']);
             Route::post('{message}/react', [MessageController::class, 'react']);
+            Route::post('{message}/read', [MessageController::class, 'markRead']);
         });
     });
 
@@ -60,6 +64,12 @@ Route::middleware(SanctumTokenMiddleware::class)->group(function () {
 
     Route::prefix('search')->group(function () {
         Route::get('', [SearchController::class, 'index']);
+    });
+
+    Route::prefix('sessions')->group(function () {
+        Route::get('', [SessionController::class, 'index']);
+        Route::delete('others', [SessionController::class, 'destroyOthers']);
+        Route::delete('{id}', [SessionController::class, 'destroy']);
     });
 
     Route::post('/logout', [AuthController::class, 'logout']);

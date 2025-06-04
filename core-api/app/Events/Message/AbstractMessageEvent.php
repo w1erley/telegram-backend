@@ -7,28 +7,28 @@ use App\Models\Message;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 abstract class AbstractMessageEvent implements ShouldBroadcastNow
 {
     use SerializesModels;
 
-    public function __construct(protected Message $message) {}
+    public function __construct(protected Message $message)
+    {
+        $this->message->loadMissing('sender', 'chat.members');
+    }
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('private-chat.'.$this->message->chat_id)];
+        $channels = [];
+        foreach ($this->message->chat->members as $member) {
+            $channels[] = new PrivateChannel('user-chats.' . $member->user_id);
+        }
+
+        return $channels;
     }
 
     public function broadcastWith(): array
     {
-        $resolved = (new MessageResource($this->message))->resolve();
-
-        Log::info('📤 Broadcasting payload', [
-            'chat_id' => $this->message->chat_id,
-            'payload' => $resolved,
-        ]);
-
-        return $resolved;
+        return (new MessageResource($this->message))->resolve();
     }
 }

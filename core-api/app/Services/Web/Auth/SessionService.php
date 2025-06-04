@@ -6,24 +6,25 @@ use App\Models\User;
 use App\Repositories\Web\SessionRepository;
 use App\Models\Session;
 use App\Services\BaseService;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
+use Carbon\Carbon;
 
 class SessionService extends BaseService
 {
     public function __construct(
         private readonly SessionRepository $sessionRepository
-    )
-    {
+    ) {
         parent::__construct($sessionRepository);
     }
 
-    public function createSession(User $user)
+    public function createSession(User $user): array
     {
-        $personalAccessToken = $user->createToken('auth_token', expiresAt: Carbon::now()->addHours(2));
+        $personalAccessToken = $user
+            ->createToken('auth_token', expiresAt: Carbon::now()->addHours(2));
 
-        $session = $this->store([
+        $session = $this->sessionRepository->store([
             'user_id' => $user->id,
             'personal_access_token_id' => $personalAccessToken->accessToken->id,
             'device' => request()->header('User-Agent'),
@@ -33,30 +34,90 @@ class SessionService extends BaseService
         ]);
 
         return [
-            "session" => $session,
-            "token" => $personalAccessToken
+            'session' => $session,
+            'token' => $personalAccessToken,
         ];
     }
 
-    public function terminateSession($authToken)
+    public function getAllSessionsForUser(User $user, int $currentTokenId): array
     {
-        $token = PersonalAccessToken::findToken($authToken);
-        if ($token) {
-            $session = $this->sessionRepository->findBy(['personal_access_token_id' => $token->id]);
-            if ($session) {
-                $session->delete();
+        $allSessions = $this->sessionRepository->findCoupleBy(['user_id' => $user->id]);
+
+        Log::info("test", ["currentTokenId" => $currentTokenId]);
+
+        if (!is_iterable($allSessions)) {
+            return [
+                'current' => null,
+                'others'  => [],
+            ];
+        }
+
+        $current = null;
+        $others = [];
+
+        foreach ($allSessions as $session) {
+            if (!($session instanceof Session)) {
+                continue;
+            }
+
+            if ($session->personal_access_token_id === $currentTokenId) {
+                $current = $session;
             } else {
-                $token->delete();
+                $others[] = $session;
             }
         }
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return [
+            'current' => $current,
+            'others'  => $others,
+        ];
     }
 
-    public function terminateAllSessions($userId)
+    public function terminateSessionById(int $sessionId, User $user): bool
     {
-        $this->repository->deleteBy(['user_id' => $userId]);
+        $session = $this->sessionRepository->one($sessionId);
 
-        return response()->json(['message' => 'Logged out from all devices']);
+        if (!($session instanceof Session) || $session->user_id !== $user->id) {
+            return false;
+        }
+
+        $currentToken = $user->currentAccessToken();
+        if ($session->personal_access_token_id === $currentToken?->id) {
+            return false;
+        }
+
+//        $token = PersonalAccessToken::find($session->personal_access_token_id);
+//        if ($token) {
+//            $token->delete();
+//        }
+
+        $session->delete();
+
+        return true;
+    }
+
+    public function terminateOtherSessions(User $user, int $currentTokenId): void
+    {
+        $allSessions = $this->sessionRepository->findCoupleBy([
+            'user_id' => $user->id,
+        ]);
+
+        if (!is_iterable($allSessions)) {
+            return;
+        }
+
+        foreach ($allSessions as $session) {
+            if (!($session instanceof Session)) {
+                continue;
+            }
+
+            if ($session->personal_access_token_id !== $currentTokenId) {
+//                $token = PersonalAccessToken::find($session->personal_access_token_id);
+//                if ($token) {
+//                    $token->delete();
+//                }
+                $session->delete();
+            }
+        }
     }
 }
