@@ -73,14 +73,4 @@ class AuthService
             'token' => $token,
         ];
     }
-
-    public function logout(string $authToken)
-    {
-        return $this->sessionService->terminateSession($authToken);
-    }
-
-    public function logoutAllSessions(int $userId)
-    {
-        return $this->sessionService->terminateAllSessions($userId);
-    }
 }

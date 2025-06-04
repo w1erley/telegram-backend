@@ -30,6 +30,22 @@ class SessionController extends Controller
         return response()->json($sessions);
     }
 
+    public function destroyCurrent(Request $request)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $token = $request->bearerToken();
+        $accessToken = PersonalAccessToken::findToken($token);
+        $currentTokenId = $accessToken?->id;
+
+        $this->sessionService->terminateCurrentSession($user, $currentTokenId);
+
+        return response()->json(['message' => 'Session terminated (logged out)']);
+    }
+
     public function destroy(Request $request, int $id)
     {
         $user = $request->user();

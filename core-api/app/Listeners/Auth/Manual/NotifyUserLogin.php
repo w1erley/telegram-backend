@@ -21,6 +21,6 @@ class NotifyUserLogin
             'message_id' => $messageId,
         ]);
 
-        Redis::publish('notifications:new_message', $payload);
+//        Redis::publish('notifications:new_message', $payload);
     }
 }

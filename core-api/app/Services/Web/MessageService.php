@@ -61,22 +61,25 @@ class MessageService extends BaseService
         return $msg;
     }
 
-//    public function edit(Message $msg, string $body): Message
-//    {
-//        $msg->update(['body' => $body, 'edited_at' => now()]);
-//
-//        broadcast(new MessageEdited($msg))->toOthers();
-//        foreach ($msg->chat->members as $member) {
-//            event(new ChatUpdated($msg->chat, $member->user_id));
-//        }
-//
-//        return $msg;
-//    }
+    public function edit(Message $msg, string $body): Message
+    {
+        $msg->update(['body' => $body, 'edited_at' => now()]);
+
+        broadcast(new MessageEdited($msg))->toOthers();
+        foreach ($msg->chat->members as $member) {
+            event(new ChatUpdated($msg->chat, $member->user_id));
+        }
+
+        return $msg;
+    }
 
     public function destroy(Message $msg): void
     {
-        $msg->update(['deleted_at' => now()]);
-        broadcast(new MessageDeleted($msg->id, $msg->chat_id))->toOthers();
+        $msg->delete();
+        broadcast(new MessageDeleted($msg))->toOthers();
+        foreach ($msg->chat->members as $member) {
+            event(new ChatUpdated($msg->chat, $member->user_id));
+        }
     }
 
 //    public function react(Message $msg, string $emoji): void

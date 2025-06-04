@@ -36,7 +36,8 @@ class SearchItemResource extends JsonResource
             'title'        => $this->sender?->name ?? 'Message',
             'description'  => Str::limit($this->body, 70),
             'message'      => new MessageResource($this),
-            'redirect_url' => "#{$this->chat_id}?message_id={$this->id}",
+            'redirect_url' => "#{$this->chat_id}",
+//            'redirect_url' => "#{$this->chat_id}?message_id={$this->id}",
         ];
     }
 }

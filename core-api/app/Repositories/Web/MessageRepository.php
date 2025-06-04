@@ -21,24 +21,20 @@ class MessageRepository extends BaseRepository
         $query = $this->model
             ->where('chat_id', $chatId);
 
-        // older (scroll-up)
         if ($beforeId) {
             $query->where('id', '<', $beforeId)
-                ->orderByDesc('id');          // newest first, then reverse
+                ->orderByDesc('id');
         }
-        // newer (scroll-down / realtime)
         elseif ($afterId) {
             $query->where('id', '>', $afterId)
-                ->orderBy('id');              // chronological
+                ->orderBy('id');
         }
-        // first load
         else {
-            $query->orderByDesc('id');          // latest N, then reverse
+            $query->orderByDesc('id');
         }
 
         $messages = $query->limit($limit)->get();
 
-        // ensure chronological order for the frontend
         return $messages->sortBy('id')->values();
     }
 }

@@ -73,6 +73,18 @@ class SessionService extends BaseService
         ];
     }
 
+    public function terminateCurrentSession(User $user, int $currentTokenId): void
+    {
+        $session = $this->sessionRepository->findBy([
+            'user_id' => $user->id,
+            'personal_access_token_id' => $currentTokenId,
+        ]);
+
+        if ($session) {
+            $session->delete();
+        }
+    }
+
     public function terminateSessionById(int $sessionId, User $user): bool
     {
         $session = $this->sessionRepository->one($sessionId);

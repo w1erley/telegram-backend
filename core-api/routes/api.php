@@ -28,6 +28,8 @@ Route::post('tus/hooks', TusHookController::class);
 Route::middleware(SanctumTokenMiddleware::class)->group(function () {
     Broadcast::routes(['middleware' => ['api', SanctumTokenMiddleware::class]]);
 
+    Route::post('logout', [SessionController::class, 'destroyCurrent']);
+
     Route::prefix('attachments')->group(function () {
         Route::post('init',     [AttachmentController::class,'init']);
         Route::post('complete', [AttachmentController::class,'complete']);
@@ -71,6 +73,4 @@ Route::middleware(SanctumTokenMiddleware::class)->group(function () {
         Route::delete('others', [SessionController::class, 'destroyOthers']);
         Route::delete('{id}', [SessionController::class, 'destroy']);
     });
-
-    Route::post('/logout', [AuthController::class, 'logout']);
 });

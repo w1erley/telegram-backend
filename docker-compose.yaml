@@ -39,8 +39,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      notifications:
-        condition: service_started
+#      notifications:
+#        condition: service_started
 #      webrtc:
 #        condition: service_started
       storage:
@@ -75,18 +75,18 @@ services:
       retries: 3
       timeout: 5s
 
-  notifications:
-    build:
-      context: ./notifications
-      dockerfile: Dockerfile
-    image: notifications_service:latest
-    ports: [ "8082:8082" ]
-    env_file: [ ./notifications/.env ]
-    environment:
-      <<: *common_env
-      JWT_SECRET: '${JWT_SECRET}'
-    networks: [sail]
-    depends_on: { redis: { condition: service_started } }
+#  notifications:
+#    build:
+#      context: ./notifications
+#      dockerfile: Dockerfile
+#    image: notifications_service:latest
+#    ports: [ "8082:8082" ]
+#    env_file: [ ./notifications/.env ]
+#    environment:
+#      <<: *common_env
+#      JWT_SECRET: '${JWT_SECRET}'
+#    networks: [sail]
+#    depends_on: { redis: { condition: service_started } }
 
 #  webrtc:
 #    build:
@@ -143,7 +143,7 @@ services:
       DOMAIN: '${DOMAIN}'
     depends_on:
       - core-api
-      - notifications
+#      - notifications
 #      - webrtc
       - storage
       - tusd
