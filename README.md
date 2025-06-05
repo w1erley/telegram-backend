@@ -1,6 +1,4 @@
-# Telegram backend (Backend)
-
-This is the backend for the messenger application, based on Laravel 11, running via Laravel Sail in Docker.
+# Telegram backend
 
 ## Main Features
 - Laravel 11 (Sail, PHP-FPM)
