@@ -23,6 +23,8 @@ class VerificationService extends BaseService
 
     public function sendVerificationEmail(User $user)
     {
+        Mail::fake();
+
         $this->deleteBy(['user_id' => $user->id]);
 
         $verificationCode = $this->verificationCodeRepository->generateForUser($user);
