@@ -9,10 +9,10 @@
         src: templates/env.core-api.j2
         dest: ../core-api/.env
 
-    - name: Generate .env for notifications
-      template:
-        src: templates/env.notifications.j2
-        dest: ../notifications/.env
+    # - name: Generate .env for notifications
+    #   template:
+    #     src: templates/env.notifications.j2
+    #     dest: ../notifications/.env
 
     - name: Generate general .env
       template:
